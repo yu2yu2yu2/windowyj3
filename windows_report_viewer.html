@@ -1,0 +1,2366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Windows 应急响应报告查看器 (详细版)</title>
+<style>
+body { 
+  font-family: "Microsoft YaHei", Arial, sans-serif; 
+  background: #f5f5f5; 
+  margin: 0;
+  padding: 0;
+}
+
+.header {
+  background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+  color: white;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 2.2em;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.subtitle {
+  margin-top: 8px;
+  font-size: 1.1em;
+  opacity: 0.9;
+}
+
+.main-container {
+  display: flex;
+  max-width: 1400px;
+  margin: 20px auto;
+  gap: 20px;
+  padding: 0 20px;
+}
+
+.content-container {
+  flex: 1;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+
+.search-container {
+  padding: 20px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.search-container input[type="file"] {
+  padding: 10px;
+  border: 2px solid #3498db;
+  border-radius: 5px;
+  background: white;
+  font-size: 14px;
+}
+
+.search-container input[type="text"] {
+  flex: 1;
+  min-width: 200px;
+  padding: 10px;
+  border: 2px solid #bdc3c7;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+.search-container input[type="text"]:focus {
+  border-color: #3498db;
+  outline: none;
+}
+
+.search-nav {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.search-nav button {
+  padding: 8px 15px;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.search-nav button:disabled {
+  background: #bdc3c7;
+  cursor: not-allowed;
+}
+
+.search-nav button:hover:not(:disabled) {
+  background: #2980b9;
+}
+
+#searchCount {
+  font-size: 12px;
+  color: #7f8c8d;
+  white-space: nowrap;
+}
+
+.tabs {
+  display: flex;
+  background: #ecf0f1;
+  border-bottom: 1px solid #bdc3c7;
+  overflow-x: auto;
+}
+
+.tablinks {
+  background: none;
+  border: none;
+  padding: 15px 20px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #2c3e50;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+  border-bottom: 3px solid transparent;
+}
+
+.tablinks:hover {
+  background: #d5dbdb;
+}
+
+.tablinks.active {
+  background: white;
+  color: #3498db;
+  border-bottom-color: #3498db;
+}
+
+.tabcontent {
+  display: none;
+  padding: 25px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.tabcontent.active {
+  display: block;
+}
+
+details {
+  margin: 15px 0;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+summary {
+  background: #f8f9fa;
+  padding: 15px 20px;
+  cursor: pointer;
+  font-weight: bold;
+  color: #2c3e50;
+  border-bottom: 1px solid #dee2e6;
+  transition: background 0.3s ease;
+}
+
+summary:hover {
+  background: #e9ecef;
+}
+
+details[open] summary {
+  background: #3498db;
+  color: white;
+}
+
+details div {
+  padding: 20px;
+  background: white;
+}
+
+pre {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 5px;
+  border-left: 4px solid #3498db;
+  overflow-x: auto;
+  font-family: "Consolas", "Monaco", monospace;
+  font-size: 13px;
+  line-height: 1.4;
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.sidebar {
+  width: 350px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  height: fit-content;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-header {
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  color: white;
+  padding: 20px;
+  text-align: center;
+  position: relative;
+}
+
+.sidebar-header h3 {
+  margin: 0;
+  font-size: 1.3em;
+}
+
+.collapse-button {
+  position: absolute;
+  top: 50%;
+  right: 15px;
+  transform: translateY(-50%);
+  background: rgba(255,255,255,0.2);
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 15px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.3s ease;
+}
+
+.collapse-button:hover {
+  background: rgba(255,255,255,0.3);
+}
+
+.alert-summary {
+  margin-top: 15px;
+  padding: 15px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.alert-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.alert-item {
+  margin: 15px 0;
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.alert-high {
+  background: #fdf2f2;
+  border-color: #e53e3e;
+  color: #742a2a;
+}
+
+.alert-medium {
+  background: #fffbf0;
+  border-color: #dd6b20;
+  color: #7c2d12;
+}
+
+.alert-low {
+  background: #f0fff4;
+  border-color: #38a169;
+  color: #22543d;
+}
+
+.alert-item h4 {
+  margin: 0 0 8px 0;
+  font-size: 15px;
+}
+
+.alert-item p {
+  margin: 5px 0;
+  font-size: 13px;
+}
+
+.highlight {
+  background: #fff3cd !important;
+  border: 2px solid #ffc107 !important;
+  border-radius: 4px;
+  padding: 2px 4px;
+}
+
+.sidebar.collapsed {
+  width: 60px;
+}
+
+.sidebar.collapsed .sidebar-header h3,
+.sidebar.collapsed .alert-summary,
+.sidebar.collapsed .alert-container {
+  display: none;
+}
+
+.sidebar.collapsed .collapse-button {
+  right: 50%;
+  transform: translate(50%, -50%);
+}
+
+@media (max-width: 768px) {
+  .main-container {
+    flex-direction: column;
+    padding: 0 10px;
+  }
+  
+  .sidebar {
+    width: 100%;
+    order: -1;
+  }
+  
+  .search-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .search-nav {
+    justify-content: center;
+  }
+  
+  .tabs {
+    flex-wrap: wrap;
+  }
+  
+  .tablinks {
+    flex: 1;
+    min-width: 120px;
+    text-align: center;
+  }
+}
+
+/* 教程样式 */
+.tutorial-content {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 10px;
+  margin: 10px 0;
+}
+
+.tutorial-content h3 {
+  color: #2c3e50;
+  margin-bottom: 20px;
+  font-size: 1.5em;
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 10px;
+}
+
+.tutorial-content h4 {
+  color: #34495e;
+  margin: 20px 0 10px 0;
+  font-size: 1.2em;
+}
+
+.tutorial-content ul, .tutorial-content ol {
+  margin: 15px 0;
+  padding-left: 25px;
+}
+
+.tutorial-content li {
+  margin: 8px 0;
+  line-height: 1.6;
+}
+
+.tutorial-content .command-block {
+  background: #2d3748;
+  color: #e2e8f0;
+  padding: 15px;
+  border-radius: 5px;
+  font-family: "Consolas", "Monaco", monospace;
+  margin: 15px 0;
+  overflow-x: auto;
+}
+
+.tutorial-content .warning {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 5px;
+  padding: 15px;
+  margin: 15px 0;
+}
+
+.tutorial-content .tip {
+  background: #d1ecf1;
+  border: 1px solid #bee5eb;
+  border-radius: 5px;
+  padding: 15px;
+  margin: 15px 0;
+}
+
+/* 告警面板样式 */
+.alert-group {
+  margin-bottom: 15px;
+  padding: 10px;
+  border-radius: 5px;
+  border-left: 4px solid;
+}
+
+.alert-group.high-risk {
+  background-color: #fff5f5;
+  border-left-color: #e53e3e;
+}
+
+.alert-group.medium-risk {
+  background-color: #fffbf0;
+  border-left-color: #dd6b20;
+}
+
+.alert-item {
+  margin-bottom: 10px;
+  padding: 8px;
+  background-color: rgba(255,255,255,0.7);
+  border-radius: 3px;
+}
+
+.alert-desc {
+  color: #666;
+  font-size: 14px;
+}
+
+.recommendations {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f0f8ff;
+  border-radius: 5px;
+  border-left: 4px solid #3182ce;
+}
+
+.recommendation-item {
+  margin-bottom: 15px;
+}
+
+.recommendation-item h5 {
+  margin: 0 0 8px 0;
+  color: #2d3748;
+}
+
+.recommendation-item ul {
+  margin: 5px 0;
+  padding-left: 20px;
+}
+
+.emergency-actions {
+  margin-top: 10px;
+  padding: 8px;
+  background-color: #fed7d7;
+  border-radius: 3px;
+}
+
+.no-alerts {
+  text-align: center;
+  padding: 20px;
+  color: #38a169;
+  font-size: 16px;
+}
+
+/* 提示消息样式 */
+.alert {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 5px;
+  color: white;
+  font-weight: bold;
+  z-index: 1000;
+  max-width: 400px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.alert-info {
+  background-color: #3182ce;
+}
+
+.alert-success {
+  background-color: #38a169;
+}
+
+.alert-error {
+  background-color: #e53e3e;
+}
+
+.alert button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  margin-left: 10px;
+}
+</style>
+
+<script>
+// 全局变量
+const TAB_TITLES = {
+  summary: "📊 系统概览",
+  system: "💻 系统信息", 
+  user: "👥 用户权限",
+  process: "⚙️ 进程服务",
+  network: "🌐 网络连接",
+  filesystem: "📁 文件系统",
+  registry: "📋 注册表",
+  logs: "📋 日志分析",
+  tasks: "⏰ 计划任务",
+  malware: "🦠 恶意软件检测",
+  stats: "📈 安全统计",
+  guide: "📖 应急指南"
+};
+
+const SUB_TAB_TITLES = {
+  summary: ["系统概览", "风险评估", "智能建议", "检查清单", "专业总结"],
+  system: ["📚 排查教程", "基本系统信息", "已安装补丁信息", "重要环境变量"],
+  user: ["📚 排查教程", "本地用户账户", "管理员组成员", "当前登录用户", "最近登录记录"],
+  process: ["📚 排查教程", "高CPU占用进程", "可疑进程检查", "运行中的系统服务", "启动项"],
+  network: ["📚 排查教程", "活动网络连接", "监听端口", "网络配置", "DNS配置"],
+  filesystem: ["📚 排查教程", "最近修改的系统文件", "临时目录可疑文件", "下载目录最近文件"],
+  registry: ["📚 排查教程", "注册表启动项", "可疑服务注册表", "最近访问的文件记录"],
+  logs: ["📚 排查教程", "登录失败记录", "系统错误事件", "应用程序错误事件"],
+  tasks: ["📚 排查教程", "活动计划任务", "可疑计划任务"],
+  malware: ["📚 排查教程", "Windows Defender状态", "可疑网络连接", "异常进程检查"],
+  stats: ["📚 统计教程", "用户安全统计", "进程安全统计", "网络安全统计", "文件系统统计", "注册表统计", "计划任务统计", "日志统计", "安全防护状态", "安全风险评估", "专业安全建议"],
+  guide: ["🎯 应急响应流程", "🔍 判断技巧大全", "📋 检查清单", "💡 专业建议", "🛠️ 工具使用", "📚 学习资源"]
+};
+
+let gTabs = Object.keys(TAB_TITLES);
+let gContent = "";
+let currentSearchIndex = -1;
+let searchMatches = [];
+let analysisData = null;
+
+// 生成Windows教程内容
+function generateWindowsTutorial(category) {
+  const tutorials = {
+    system: `
+<div class="tutorial-content">
+<h3>🛡️ Windows系统信息安全检查指南</h3>
+
+<h4>📖 系统信息检查的重要性</h4>
+<p>系统信息是了解Windows环境安全状况的基础。通过系统信息检查可以发现系统漏洞、配置问题和潜在的安全风险。</p>
+
+<h4>🔍 检查要点</h4>
+<ol>
+<li><strong>操作系统版本</strong> - 确认系统版本和补丁级别</li>
+<li><strong>补丁安装情况</strong> - 检查关键安全补丁是否安装</li>
+<li><strong>系统配置</strong> - 验证安全配置是否合规</li>
+<li><strong>硬件信息</strong> - 了解系统硬件配置</li>
+<li><strong>环境变量</strong> - 检查可能被劫持的环境变量</li>
+</ol>
+
+<h4>💻 关键PowerShell命令</h4>
+<div class="command-block">
+# 1. 获取系统基本信息
+Get-ComputerInfo
+
+# 2. 查看操作系统详细信息
+Get-CimInstance -ClassName Win32_OperatingSystem
+
+# 3. 检查已安装的补丁
+Get-HotFix | Sort-Object InstalledOn -Descending
+
+# 4. 查看系统启动时间
+Get-CimInstance -ClassName Win32_OperatingSystem | Select-Object LastBootUpTime
+
+# 5. 检查环境变量
+Get-ChildItem Env:
+
+# 6. 查看系统服务
+Get-Service | Where-Object {$_.Status -eq "Running"}
+
+# 7. 检查Windows功能
+Get-WindowsOptionalFeature -Online | Where-Object {$_.State -eq "Enabled"}
+</div>
+
+<h4>🚨 安全检查重点</h4>
+<ul>
+<li><strong>补丁管理</strong> - 确保关键安全补丁已安装</li>
+<li><strong>系统版本</strong> - 使用受支持的Windows版本</li>
+<li><strong>启动时间</strong> - 异常的重启可能表示系统被攻击</li>
+<li><strong>环境变量</strong> - PATH等变量是否被恶意修改</li>
+<li><strong>系统功能</strong> - 不必要的功能应该被禁用</li>
+</ul>
+
+<h4>⚠️ 注意事项</h4>
+<ul>
+<li>定期检查Windows Update状态</li>
+<li>关注Microsoft安全公告</li>
+<li>监控系统配置变化</li>
+<li>建立系统基线配置</li>
+</ul>
+</div>
+    `,
+    
+    user: `
+<div class="tutorial-content">
+<h3>👥 Windows用户权限安全检查指南</h3>
+
+<h4>📖 用户权限检查的重要性</h4>
+<p>用户账户管理是Windows安全的核心。攻击者常常通过创建后门账户、提升权限或利用弱密码来维持系统访问。</p>
+
+<h4>🔍 检查要点</h4>
+<ol>
+<li><strong>本地用户账户</strong> - 检查所有本地用户的合法性</li>
+<li><strong>管理员权限</strong> - 审查管理员组成员</li>
+<li><strong>登录活动</strong> - 分析用户登录行为</li>
+<li><strong>密码策略</strong> - 验证密码安全策略</li>
+<li><strong>用户组权限</strong> - 检查用户组配置</li>
+</ol>
+
+<h4>💻 关键PowerShell命令</h4>
+<div class="command-block">
+# 1. 查看本地用户账户
+Get-LocalUser
+
+# 2. 检查管理员组成员
+Get-LocalGroupMember -Group "Administrators"
+
+# 3. 查看所有本地组
+Get-LocalGroup
+
+# 4. 检查当前登录用户
+Get-CimInstance -ClassName Win32_LoggedOnUser
+
+# 5. 查看用户登录历史
+Get-WinEvent -FilterHashtable @{LogName='Security'; ID=4624} -MaxEvents 50
+
+# 6. 检查登录失败记录
+Get-WinEvent -FilterHashtable @{LogName='Security'; ID=4625} -MaxEvents 50
+
+# 7. 查看密码策略
+net accounts
+
+# 8. 检查用户权限分配
+secedit /export /cfg security_config.txt
+</div>
+
+<h4>🚨 安全风险识别</h4>
+<ul>
+<li><strong>异常管理员账户</strong> - 检查是否有未授权的管理员</li>
+<li><strong>默认账户状态</strong> - Guest账户应该被禁用</li>
+<li><strong>弱密码策略</strong> - 密码复杂度和过期策略</li>
+<li><strong>异常登录时间</strong> - 非工作时间的登录活动</li>
+<li><strong>登录失败模式</strong> - 暴力破解攻击迹象</li>
+</ul>
+
+<h4>🛡️ 安全建议</h4>
+<ul>
+<li>实施最小权限原则</li>
+<li>定期审查用户账户</li>
+<li>启用账户锁定策略</li>
+<li>使用强密码策略</li>
+<li>监控登录活动</li>
+</ul>
+</div>
+    `,
+    
+    process: `
+<div class="tutorial-content">
+<h3>⚙️ Windows进程服务安全检查指南</h3>
+
+<h4>📖 进程服务检查的重要性</h4>
+<p>恶意进程和服务是攻击者在Windows系统中执行恶意活动的主要载体。通过进程分析可以发现后门程序、恶意软件和异常活动。</p>
+
+<h4>🔍 检查要点</h4>
+<ol>
+<li><strong>进程行为分析</strong> - 分析进程的资源使用和行为</li>
+<li><strong>服务状态检查</strong> - 检查系统服务的合法性</li>
+<li><strong>启动项审查</strong> - 检查自启动程序</li>
+<li><strong>进程签名验证</strong> - 验证进程的数字签名</li>
+<li><strong>网络连接关联</strong> - 分析进程的网络活动</li>
+</ol>
+
+<h4>💻 关键PowerShell命令</h4>
+<div class="command-block">
+# 1. 查看所有进程详细信息
+Get-Process | Select-Object Name, Id, CPU, WorkingSet, Path
+
+# 2. 按CPU使用率排序
+Get-Process | Sort-Object CPU -Descending | Select-Object -First 20
+
+# 3. 查看进程的网络连接
+Get-NetTCPConnection | Select-Object LocalAddress, LocalPort, RemoteAddress, RemotePort, State, OwningProcess
+
+# 4. 检查系统服务
+Get-Service | Where-Object {$_.Status -eq "Running"}
+
+# 5. 查看服务详细信息
+Get-CimInstance -ClassName Win32_Service | Select-Object Name, DisplayName, State, PathName
+
+# 6. 检查启动项
+Get-CimInstance -ClassName Win32_StartupCommand
+
+# 7. 查看进程模块
+Get-Process -Name "processname" | Select-Object -ExpandProperty Modules
+
+# 8. 检查进程的数字签名
+Get-AuthenticodeSignature -FilePath "C:\path\to\executable.exe"
+</div>
+
+<h4>🚨 可疑进程特征</h4>
+<ul>
+<li><strong>高资源占用</strong> - 异常高的CPU或内存使用</li>
+<li><strong>异常路径</strong> - 从临时目录或用户目录运行</li>
+<li><strong>无签名文件</strong> - 缺少数字签名的可执行文件</li>
+<li><strong>隐藏进程</strong> - 使用特殊技术隐藏的进程</li>
+<li><strong>网络活动</strong> - 异常的网络连接行为</li>
+</ul>
+
+<h4>🛡️ 防护建议</h4>
+<ul>
+<li>定期监控进程活动</li>
+<li>使用应用程序白名单</li>
+<li>启用进程审计</li>
+<li>监控服务状态变化</li>
+<li>验证可执行文件签名</li>
+</ul>
+</div>
+    `,
+    
+    network: `
+<div class="tutorial-content">
+<h3>🌐 Windows网络安全检查指南</h3>
+
+<h4>📖 网络安全检查的重要性</h4>
+<p>网络连接是攻击者进入系统和数据外泄的主要通道。通过网络检查可以发现后门连接、异常通信和潜在的数据泄露行为。</p>
+
+<h4>🔍 检查要点</h4>
+<ol>
+<li><strong>网络连接分析</strong> - 检查活跃的网络连接</li>
+<li><strong>端口监听检查</strong> - 识别异常的监听服务</li>
+<li><strong>防火墙状态</strong> - 检查Windows防火墙配置</li>
+<li><strong>网络配置</strong> - 验证网络接口配置</li>
+<li><strong>DNS设置</strong> - 检查DNS配置安全性</li>
+</ol>
+
+<h4>💻 关键PowerShell命令</h4>
+<div class="command-block">
+# 1. 查看所有网络连接
+Get-NetTCPConnection
+
+# 2. 查看监听端口
+Get-NetTCPConnection | Where-Object {$_.State -eq "Listen"}
+
+# 3. 查看活跃连接
+Get-NetTCPConnection | Where-Object {$_.State -eq "Established"}
+
+# 4. 检查网络适配器
+Get-NetAdapter
+
+# 5. 查看IP配置
+Get-NetIPAddress
+
+# 6. 检查路由表
+Get-NetRoute
+
+# 7. 查看DNS配置
+Get-DnsClientServerAddress
+
+# 8. 检查防火墙状态
+Get-NetFirewallProfile
+
+# 9. 查看防火墙规则
+Get-NetFirewallRule | Where-Object {$_.Enabled -eq "True"}
+
+# 10. 检查网络统计
+Get-NetAdapterStatistics
+</div>
+
+<h4>🚨 可疑网络活动</h4>
+<ul>
+<li><strong>异常外连</strong> - 连接到可疑IP地址或域名</li>
+<li><strong>非标准端口</strong> - 使用异常端口进行通信</li>
+<li><strong>大量连接</strong> - 异常高的并发连接数</li>
+<li><strong>防火墙关闭</strong> - Windows防火墙被禁用</li>
+<li><strong>DNS劫持</strong> - DNS设置被恶意修改</li>
+</ul>
+
+<h4>🛡️ 安全建议</h4>
+<ul>
+<li>启用Windows防火墙</li>
+<li>监控网络连接活动</li>
+<li>使用安全的DNS服务器</li>
+<li>定期检查网络配置</li>
+<li>实施网络访问控制</li>
+</ul>
+</div>
+    `,
+    
+    filesystem: `
+<div class="tutorial-content">
+<h3>📁 Windows文件系统安全检查指南</h3>
+
+<h4>📖 文件系统检查的重要性</h4>
+<p>文件系统是攻击者植入恶意文件、篡改系统配置和存储窃取数据的主要目标。通过文件系统检查可以发现恶意文件和系统完整性问题。</p>
+
+<h4>🔍 检查要点</h4>
+<ol>
+<li><strong>系统文件完整性</strong> - 检查关键系统文件</li>
+<li><strong>临时目录检查</strong> - 查找可疑的临时文件</li>
+<li><strong>下载目录审查</strong> - 检查最近下载的文件</li>
+<li><strong>文件权限检查</strong> - 验证文件权限设置</li>
+<li><strong>隐藏文件发现</strong> - 查找隐藏的恶意文件</li>
+</ol>
+
+<h4>💻 关键PowerShell命令</h4>
+<div class="command-block">
+# 1. 检查系统文件完整性
+sfc /scannow
+
+# 2. 查找最近修改的文件
+Get-ChildItem -Path "C:\Windows\System32" -Recurse | Where-Object {$_.LastWriteTime -gt (Get-Date).AddDays(-7)}
+
+# 3. 检查临时目录
+Get-ChildItem -Path $env:TEMP -Recurse -Force
+
+# 4. 查看下载目录
+Get-ChildItem -Path "$env:USERPROFILE\Downloads" | Where-Object {$_.CreationTime -gt (Get-Date).AddDays(-7)}
+
+# 5. 查找可执行文件
+Get-ChildItem -Path "C:\" -Recurse -Include "*.exe", "*.bat", "*.cmd", "*.ps1" -ErrorAction SilentlyContinue
+
+# 6. 检查文件权限
+Get-Acl -Path "C:\Windows\System32\notepad.exe"
+
+# 7. 查找隐藏文件
+Get-ChildItem -Path "C:\" -Recurse -Hidden -ErrorAction SilentlyContinue
+
+# 8. 检查文件哈希
+Get-FileHash -Path "C:\Windows\System32\notepad.exe" -Algorithm SHA256
+
+# 9. 查找大文件
+Get-ChildItem -Path "C:\" -Recurse | Where-Object {$_.Length -gt 100MB} -ErrorAction SilentlyContinue
+</div>
+
+<h4>🚨 可疑文件特征</h4>
+<ul>
+<li><strong>临时目录可执行文件</strong> - 在临时目录中的exe、bat等文件</li>
+<li><strong>系统目录异常文件</strong> - 系统目录中的非系统文件</li>
+<li><strong>无签名文件</strong> - 缺少数字签名的可执行文件</li>
+<li><strong>隐藏属性文件</strong> - 具有隐藏属性的可疑文件</li>
+<li><strong>异常大小文件</strong> - 大小异常的系统文件</li>
+</ul>
+
+<h4>🛡️ 安全建议</h4>
+<ul>
+<li>定期运行系统文件检查</li>
+<li>监控关键目录变化</li>
+<li>限制临时目录执行权限</li>
+<li>使用文件完整性监控</li>
+<li>定期清理临时文件</li>
+</ul>
+</div>
+    `,
+    
+    registry: `
+<div class="tutorial-content">
+<h3>📋 Windows注册表安全检查指南</h3>
+
+<h4>📖 注册表检查的重要性</h4>
+<p>Windows注册表是系统配置的核心数据库。攻击者经常通过修改注册表来实现持久化、隐藏恶意软件和改变系统行为。</p>
+
+<h4>🔍 检查要点</h4>
+<ol>
+<li><strong>启动项注册表</strong> - 检查自启动程序配置</li>
+<li><strong>服务注册表</strong> - 验证系统服务配置</li>
+<li><strong>安全策略</strong> - 检查安全相关注册表项</li>
+<li><strong>文件关联</strong> - 验证文件类型关联</li>
+<li><strong>系统配置</strong> - 检查关键系统配置项</li>
+</ol>
+
+<h4>💻 关键PowerShell命令</h4>
+<div class="command-block">
+# 1. 检查启动项注册表
+Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
+Get-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
+
+# 2. 查看RunOnce项
+Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce"
+Get-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\RunOnce"
+
+# 3. 检查服务注册表
+Get-ChildItem -Path "HKLM:\SYSTEM\CurrentControlSet\Services"
+
+# 4. 查看最近运行的程序
+Get-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\RunMRU"
+
+# 5. 检查文件关联
+Get-ItemProperty -Path "HKLM:\SOFTWARE\Classes\.exe"
+
+# 6. 查看安装的程序
+Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*"
+
+# 7. 检查网络设置
+Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters"
+
+# 8. 查看用户配置文件
+Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\*"
+</div>
+
+<h4>🚨 可疑注册表项</h4>
+<ul>
+<li><strong>异常启动项</strong> - 指向可疑文件的启动项</li>
+<li><strong>未知服务</strong> - 不明来源的系统服务</li>
+<li><strong>修改的文件关联</strong> - 被恶意修改的文件类型关联</li>
+<li><strong>异常网络配置</strong> - 被篡改的网络设置</li>
+<li><strong>安全策略变更</strong> - 被修改的安全策略</li>
+</ul>
+
+<h4>🛡️ 安全建议</h4>
+<ul>
+<li>定期备份注册表</li>
+<li>监控关键注册表项变化</li>
+<li>使用组策略管理配置</li>
+<li>限制注册表修改权限</li>
+<li>审计注册表访问</li>
+</ul>
+</div>
+    `,
+    
+    logs: `
+<div class="tutorial-content">
+<h3>📋 Windows日志分析安全检查指南</h3>
+
+<h4>📖 日志分析的重要性</h4>
+<p>Windows事件日志记录了系统的所有重要活动。通过专业的日志分析可以发现攻击痕迹、重建攻击时间线，并评估安全事件的影响范围。</p>
+
+<h4>🔍 日志分析要点</h4>
+<ol>
+<li><strong>安全日志分析</strong> - 分析登录、权限变更等安全事件</li>
+<li><strong>系统日志检查</strong> - 检查系统错误和异常</li>
+<li><strong>应用程序日志</strong> - 分析应用程序相关事件</li>
+<li><strong>事件关联分析</strong> - 多维度关联分析</li>
+<li><strong>时间线重建</strong> - 构建完整的事件时间线</li>
+</ol>
+
+<h4>💻 关键PowerShell命令</h4>
+<div class="command-block">
+# 1. 查看登录成功事件
+Get-WinEvent -FilterHashtable @{LogName='Security'; ID=4624} -MaxEvents 100
+
+# 2. 查看登录失败事件
+Get-WinEvent -FilterHashtable @{LogName='Security'; ID=4625} -MaxEvents 100
+
+# 3. 查看账户锁定事件
+Get-WinEvent -FilterHashtable @{LogName='Security'; ID=4740} -MaxEvents 50
+
+# 4. 查看权限提升事件
+Get-WinEvent -FilterHashtable @{LogName='Security'; ID=4672} -MaxEvents 50
+
+# 5. 查看系统错误事件
+Get-WinEvent -FilterHashtable @{LogName='System'; Level=2} -MaxEvents 50
+
+# 6. 查看应用程序错误
+Get-WinEvent -FilterHashtable @{LogName='Application'; Level=2} -MaxEvents 50
+
+# 7. 查看服务启动停止事件
+Get-WinEvent -FilterHashtable @{LogName='System'; ID=7034,7035,7036} -MaxEvents 50
+
+# 8. 查看进程创建事件（需要启用审计）
+Get-WinEvent -FilterHashtable @{LogName='Security'; ID=4688} -MaxEvents 100
+
+# 9. 查看文件访问事件（需要启用审计）
+Get-WinEvent -FilterHashtable @{LogName='Security'; ID=4656,4658} -MaxEvents 50
+</div>
+
+<h4>🚨 关键安全事件ID</h4>
+<ul>
+<li><strong>4624</strong> - 账户成功登录</li>
+<li><strong>4625</strong> - 账户登录失败</li>
+<li><strong>4648</strong> - 使用显式凭据登录</li>
+<li><strong>4672</strong> - 分配了特殊权限</li>
+<li><strong>4688</strong> - 新进程已创建</li>
+<li><strong>4740</strong> - 用户账户被锁定</li>
+<li><strong>4756</strong> - 成员已添加到安全组</li>
+<li><strong>4720</strong> - 用户账户已创建</li>
+</ul>
+
+<h4>🔧 日志分析技巧</h4>
+<ol>
+<li><strong>时间关联</strong> - 分析事件发生的时间模式</li>
+<li><strong>用户行为</strong> - 分析用户活动模式</li>
+<li><strong>IP地址分析</strong> - 识别异常来源IP</li>
+<li><strong>失败模式</strong> - 分析登录失败的模式</li>
+<li><strong>权限变更</strong> - 监控权限提升事件</li>
+</ol>
+
+<h4>🛡️ 日志安全建议</h4>
+<ul>
+<li>启用详细的安全审计</li>
+<li>定期分析安全日志</li>
+<li>设置日志告警规则</li>
+<li>保护日志文件安全</li>
+<li>建立日志备份策略</li>
+</ul>
+</div>
+    `,
+    
+    tasks: `
+<div class="tutorial-content">
+<h3>⏰ Windows计划任务安全检查指南</h3>
+
+<h4>📖 计划任务检查的重要性</h4>
+<p>Windows计划任务是攻击者实现持久化的常用方法。恶意的计划任务可以在系统启动时或特定时间执行恶意代码，维持对系统的控制。</p>
+
+<h4>🔍 检查要点</h4>
+<ol>
+<li><strong>任务合法性</strong> - 验证计划任务的合法性</li>
+<li><strong>执行权限</strong> - 检查任务的执行权限</li>
+<li><strong>触发条件</strong> - 分析任务的触发条件</li>
+<li><strong>执行内容</strong> - 检查任务执行的命令或脚本</li>
+<li><strong>创建时间</strong> - 关注任务的创建时间</li>
+</ol>
+
+<h4>💻 关键PowerShell命令</h4>
+<div class="command-block">
+# 1. 查看所有计划任务
+Get-ScheduledTask
+
+# 2. 查看运行中的任务
+Get-ScheduledTask | Where-Object {$_.State -eq "Running"}
+
+# 3. 查看就绪状态的任务
+Get-ScheduledTask | Where-Object {$_.State -eq "Ready"}
+
+# 4. 获取任务详细信息
+Get-ScheduledTaskInfo -TaskName "TaskName"
+
+# 5. 查看任务的操作
+Get-ScheduledTask | Select-Object TaskName, Actions
+
+# 6. 查看任务的触发器
+Get-ScheduledTask | Select-Object TaskName, Triggers
+
+# 7. 查看特定路径下的任务
+Get-ScheduledTask -TaskPath "\Microsoft\Windows\*"
+
+# 8. 导出任务配置
+Export-ScheduledTask -TaskName "TaskName"
+
+# 9. 查看任务历史
+Get-WinEvent -FilterHashtable @{LogName='Microsoft-Windows-TaskScheduler/Operational'} -MaxEvents 100
+</div>
+
+<h4>🚨 可疑任务特征</h4>
+<ul>
+<li><strong>异常执行路径</strong> - 执行临时目录或用户目录中的文件</li>
+<li><strong>可疑命令</strong> - 执行PowerShell、cmd等命令行工具</li>
+<li><strong>高权限执行</strong> - 以SYSTEM权限运行的可疑任务</li>
+<li><strong>频繁触发</strong> - 异常频繁的触发条件</li>
+<li><strong>隐藏任务</strong> - 在非标准位置的任务</li>
+</ul>
+
+<h4>🔧 分析技巧</h4>
+<ol>
+<li><strong>时间关联</strong> - 将任务创建时间与安全事件关联</li>
+<li><strong>权限分析</strong> - 检查任务的执行权限</li>
+<li><strong>内容分析</strong> - 分析任务执行的脚本内容</li>
+<li><strong>网络活动</strong> - 检查任务是否有网络活动</li>
+<li><strong>文件依赖</strong> - 分析任务依赖的文件</li>
+</ol>
+
+<h4>🛡️ 安全建议</h4>
+<ul>
+<li>定期审查计划任务</li>
+<li>限制任务创建权限</li>
+<li>监控任务执行日志</li>
+<li>使用组策略管理任务</li>
+<li>建立任务白名单</li>
+</ul>
+</div>
+    `,
+    
+    malware: `
+<div class="tutorial-content">
+<h3>🦠 Windows恶意软件检测指南</h3>
+
+<h4>📖 恶意软件检测的重要性</h4>
+<p>恶意软件是Windows系统面临的主要威胁之一。及时发现和清除恶意软件对于保护系统安全和数据完整性至关重要。</p>
+
+<h4>🔍 检测要点</h4>
+<ol>
+<li><strong>防病毒状态</strong> - 检查Windows Defender等防病毒软件状态</li>
+<li><strong>进程行为</strong> - 分析可疑进程的行为特征</li>
+<li><strong>网络连接</strong> - 检测异常的网络通信</li>
+<li><strong>文件特征</strong> - 识别恶意文件特征</li>
+<li><strong>系统变更</strong> - 监控系统配置变更</li>
+</ol>
+
+<h4>💻 关键PowerShell命令</h4>
+<div class="command-block">
+# 1. 检查Windows Defender状态
+Get-MpComputerStatus
+
+# 2. 查看威胁检测历史
+Get-MpThreatDetection
+
+# 3. 运行快速扫描
+Start-MpScan -ScanType QuickScan
+
+# 4. 查看排除项
+Get-MpPreference | Select-Object ExclusionPath, ExclusionProcess
+
+# 5. 检查实时保护状态
+Get-MpComputerStatus | Select-Object RealTimeProtectionEnabled
+
+# 6. 查看可疑网络连接
+Get-NetTCPConnection | Where-Object {$_.RemoteAddress -notmatch "^(127\.|10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.)"}
+
+# 7. 检查异常进程
+Get-Process | Where-Object {$_.ProcessName -match "^[a-f0-9]{8,}$"}
+
+# 8. 查看签名状态
+Get-ChildItem -Path "C:\Windows\System32\*.exe" | Get-AuthenticodeSignature | Where-Object {$_.Status -ne "Valid"}
+
+# 9. 检查启动项
+Get-CimInstance -ClassName Win32_StartupCommand | Where-Object {$_.Command -match "(temp|tmp|appdata)"}
+</div>
+
+<h4>🚨 恶意软件特征</h4>
+<ul>
+<li><strong>防病毒被禁用</strong> - Windows Defender或其他防病毒软件被关闭</li>
+<li><strong>异常网络连接</strong> - 连接到可疑IP或域名</li>
+<li><strong>无签名文件</strong> - 缺少数字签名的可执行文件</li>
+<li><strong>异常进程名</strong> - 随机字符命名的进程</li>
+<li><strong>高资源占用</strong> - 异常高的CPU或网络使用</li>
+</ul>
+
+<h4>🔧 检测技巧</h4>
+<ol>
+<li><strong>行为分析</strong> - 监控进程的异常行为</li>
+<li><strong>网络监控</strong> - 分析网络流量模式</li>
+<li><strong>文件分析</strong> - 检查文件的哈希值和签名</li>
+<li><strong>内存分析</strong> - 分析内存中的恶意代码</li>
+<li><strong>沙箱分析</strong> - 在隔离环境中分析可疑文件</li>
+</ol>
+
+<h4>🛡️ 防护建议</h4>
+<ul>
+<li>保持Windows Defender启用</li>
+<li>定期更新病毒定义</li>
+<li>使用应用程序白名单</li>
+<li>监控系统行为变化</li>
+<li>定期进行全盘扫描</li>
+</ul>
+</div>
+    `
+  };
+  
+  return tutorials[category] || '<p>该模块的教程正在完善中...</p>';
+}
+
+// 文件上传处理
+document.addEventListener('DOMContentLoaded', function() {
+  const fileInput = document.getElementById('fileInput');
+  if (fileInput) {
+    fileInput.addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (file) {
+    // 显示上传进度
+    showAlert('正在分析文件，请稍候...', 'info');
+    
+    // 使用FormData上传文件到后端API
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    fetch('/analyze', {
+      method: 'POST',
+      body: formData
+    })
+    .then(response => response.json())
+    .then(result => {
+      if (result.success) {
+        // 处理分析结果
+        processAnalysisResult(result);
+        
+        // 同时读取文件内容用于显示，但不重新分析
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          gContent = e.target.result;
+          parseAndRenderReport(gContent, true); // 传递参数表示已经分析过了
+        };
+        reader.readAsText(file);
+      } else {
+        showAlert('文件分析失败: ' + (result.error || '未知错误'), 'error');
+      }
+    })
+    .catch(error => {
+      console.error('分析错误:', error);
+      showAlert('文件分析失败: ' + error.message, 'error');
+      
+      // 如果API失败，仍然尝试本地解析
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        gContent = e.target.result;
+        parseAndRenderReport(gContent);
+      };
+      reader.readAsText(file);
+    });
+  }
+    });
+  }
+});
+
+// 处理分析结果
+function processAnalysisResult(result) {
+  // 更新告警面板
+  updateAlertsPanel(result.alerts, result.recommendations);
+  
+  // 显示分析完成消息
+  const alertCount = result.alerts ? result.alerts.length : 0;
+  const riskLevel = alertCount > 5 ? '高风险' : alertCount > 2 ? '中等风险' : '低风险';
+  showAlert(`分析完成！发现 ${alertCount} 个安全告警，风险等级：${riskLevel}`, 'success');
+}
+
+// 更新告警面板
+function updateAlertsPanel(alerts, recommendations) {
+  const alertsContainer = document.getElementById('alertContainer');
+  if (!alertsContainer) return;
+  
+  let alertsHtml = '';
+  
+  if (alerts && alerts.length > 0) {
+    // 按严重程度分组
+    const alertsBySeverity = {
+      high: alerts.filter(a => a.severity === 'high'),
+      medium: alerts.filter(a => a.severity === 'medium'),
+      low: alerts.filter(a => a.severity === 'low')
+    };
+    
+    // 显示高危告警
+    if (alertsBySeverity.high.length > 0) {
+      alertsHtml += `<div class="alert-group high-risk">
+        <h4>🚨 高危告警 (${alertsBySeverity.high.length})</h4>`;
+      alertsBySeverity.high.forEach(alert => {
+        alertsHtml += `<div class="alert-item">
+          <strong>${alert.rule_name}</strong><br>
+          <span class="alert-desc">${alert.description}</span><br>
+          <small>行号: ${alert.line_number} | 类别: ${alert.category}</small>
+        </div>`;
+      });
+      alertsHtml += '</div>';
+    }
+    
+    // 显示中危告警
+    if (alertsBySeverity.medium.length > 0) {
+      alertsHtml += `<div class="alert-group medium-risk">
+        <h4>⚠️ 中危告警 (${alertsBySeverity.medium.length})</h4>`;
+      alertsBySeverity.medium.forEach(alert => {
+        alertsHtml += `<div class="alert-item">
+          <strong>${alert.rule_name}</strong><br>
+          <span class="alert-desc">${alert.description}</span><br>
+          <small>行号: ${alert.line_number} | 类别: ${alert.category}</small>
+        </div>`;
+      });
+      alertsHtml += '</div>';
+    }
+    
+    // 显示处置建议
+    if (recommendations && recommendations.length > 0) {
+      alertsHtml += `<div class="recommendations">
+        <h4>💡 处置建议</h4>`;
+      recommendations.forEach(rec => {
+        alertsHtml += `<div class="recommendation-item">
+          <h5>${rec.category} (${rec.priority}优先级)</h5>
+          <ul>`;
+        rec.actions.forEach(action => {
+          alertsHtml += `<li>${action}</li>`;
+        });
+        alertsHtml += '</ul>';
+        
+        if (rec.emergency_actions && rec.emergency_actions.length > 0) {
+          alertsHtml += '<div class="emergency-actions"><strong>紧急措施：</strong><ul>';
+          rec.emergency_actions.forEach(action => {
+            alertsHtml += `<li>${action}</li>`;
+          });
+          alertsHtml += '</ul></div>';
+        }
+        alertsHtml += '</div>';
+      });
+      alertsHtml += '</div>';
+    }
+  } else {
+    alertsHtml = '<div class="no-alerts">✅ 未发现安全告警，系统状态良好</div>';
+  }
+  
+  alertsContainer.innerHTML = alertsHtml;
+}
+
+// 显示提示消息
+function showAlert(message, type = 'info') {
+  // 创建提示元素
+  const alertDiv = document.createElement('div');
+  alertDiv.className = `alert alert-${type}`;
+  alertDiv.innerHTML = `
+    <span>${message}</span>
+    <button onclick="this.parentElement.remove()">×</button>
+  `;
+  
+  // 添加到页面顶部
+  document.body.insertBefore(alertDiv, document.body.firstChild);
+  
+  // 3秒后自动消失
+  setTimeout(() => {
+    if (alertDiv.parentElement) {
+      alertDiv.remove();
+    }
+  }, 3000);
+}
+
+// 解析并渲染报告
+function parseAndRenderReport(content, skipAnalysis = false) {
+  const data = {};
+  
+  // 解析Windows报告内容
+  const sections = content.split(/={60,}/);
+  
+  sections.forEach(section => {
+    const lines = section.trim().split('\n');
+    if (lines.length > 0) {
+      const title = lines[0].trim();
+      
+      // 映射到对应的标签
+      if (title.includes('系统信息')) {
+        data.system = parseSystemSection(section);
+      } else if (title.includes('用户和权限')) {
+        data.user = parseUserSection(section);
+      } else if (title.includes('进程和服务')) {
+        data.process = parseProcessSection(section);
+      } else if (title.includes('网络连接')) {
+        data.network = parseNetworkSection(section);
+      } else if (title.includes('文件系统')) {
+        data.filesystem = parseFilesystemSection(section);
+      } else if (title.includes('注册表')) {
+        data.registry = parseRegistrySection(section);
+      } else if (title.includes('日志分析')) {
+        data.logs = parseLogsSection(section);
+      } else if (title.includes('计划任务')) {
+        data.tasks = parseTasksSection(section);
+      } else if (title.includes('恶意软件')) {
+        data.malware = parseMalwareSection(section);
+      } else if (title.includes('安全统计汇总')) {
+        data.stats = parseStatsSection(section);
+      }
+    }
+  });
+  
+  // 生成概览数据
+  data.summary = generateSummaryContent(data);
+  data.guide = generateGuideContent();
+  
+  renderTabs(data);
+}
+
+// 解析各个部分的函数
+function parseSystemSection(content) {
+  const subsections = content.split(/-{40,}/);
+  const result = {};
+  
+  subsections.forEach(sub => {
+    const lines = sub.trim().split('\n');
+    if (lines.length > 1) {
+      const title = lines[0].trim();
+      const content = lines.slice(1).join('\n');
+      result[title] = content;
+    }
+  });
+  
+  return result;
+}
+
+function parseUserSection(content) {
+  return parseSystemSection(content);
+}
+
+function parseProcessSection(content) {
+  return parseSystemSection(content);
+}
+
+function parseNetworkSection(content) {
+  return parseSystemSection(content);
+}
+
+function parseFilesystemSection(content) {
+  return parseSystemSection(content);
+}
+
+function parseRegistrySection(content) {
+  return parseSystemSection(content);
+}
+
+function parseLogsSection(content) {
+  return parseSystemSection(content);
+}
+
+function parseTasksSection(content) {
+  return parseSystemSection(content);
+}
+
+function parseMalwareSection(content) {
+  return parseSystemSection(content);
+}
+
+function parseStatsSection(content) {
+  return parseSystemSection(content);
+}
+
+function parseGuideSection(content) {
+  return parseSystemSection(content);
+}
+
+// 生成概览内容
+function generateSummaryContent(data) {
+  let summary = "Windows系统应急响应报告概览\n\n";
+  
+  // 统计信息
+  summary += "检查模块统计:\n";
+  Object.keys(data).forEach(key => {
+    if (key !== 'summary') {
+      const moduleData = data[key];
+      const itemCount = Object.keys(moduleData || {}).length;
+      summary += `- ${TAB_TITLES[key]}: ${itemCount} 个检查项\n`;
+    }
+  });
+  
+  summary += "\n安全状况评估:\n";
+  summary += "- 系统信息: 已收集\n";
+  summary += "- 用户权限: 已检查\n";
+  summary += "- 进程服务: 已分析\n";
+  summary += "- 网络连接: 已监控\n";
+  summary += "- 文件系统: 已扫描\n";
+  summary += "- 注册表: 已审查\n";
+  summary += "- 系统日志: 已分析\n";
+  summary += "- 计划任务: 已检查\n";
+  summary += "- 恶意软件: 已检测\n";
+  
+  return {
+    "系统概览": summary,
+    "风险评估": "基于检查结果进行风险评估...",
+    "智能建议": "根据发现的问题提供处置建议...",
+    "检查清单": "Windows安全检查清单...",
+    "专业总结": "基于NIST框架的专业分析总结..."
+  };
+}
+
+// 生成应急指南内容
+function generateGuideContent() {
+  return {
+    "🎯 应急响应流程": `
+Windows应急响应完整流程指南
+
+📋 阶段1：准备阶段（平时准备）
+□ 建立应急响应团队和联系方式
+□ 准备应急响应工具和脚本
+□ 制定应急响应预案和流程
+□ 定期进行应急演练
+□ 建立系统基线和监控
+
+🔍 阶段2：识别阶段（发现问题）
+1. 收集告警信息和异常现象
+2. 初步判断是否为安全事件
+3. 确定影响范围和严重程度
+4. 启动应急响应流程
+5. 通知相关人员和管理层
+
+🚫 阶段3：遏制阶段（控制影响）
+立即措施：
+□ 隔离受影响系统（断网但不关机）
+□ 阻断可疑网络连接
+□ 禁用可疑用户账户
+□ 停止可疑进程和服务
+
+短期措施：
+□ 修改所有账户密码
+□ 更新安全策略和规则
+□ 加强监控和日志记录
+□ 部署临时安全措施
+
+🧹 阶段4：根除阶段（清除威胁）
+1. 深度扫描和分析
+2. 清除恶意代码
+3. 系统加固
+
+🔄 阶段5：恢复阶段（恢复业务）
+1. 系统验证
+2. 逐步恢复
+3. 持续监控
+
+📝 阶段6：总结阶段（经验教训）
+1. 事件分析报告
+2. 改进措施
+3. 预防措施
+`,
+    "🔍 判断技巧大全": `
+Windows应急响应判断技巧（大白话版）
+
+👥 用户账户安全判断
+
+🚨 高危信号：
+✗ 发现除了Administrator外还有其他管理员账户
+✗ 有用户的SID是500（超级管理员权限）
+✗ 发现从未登录但启用的账户
+✗ 最近新增的可疑用户账户
+
+✅ 正常情况：
+✓ 只有Administrator一个管理员账户
+✓ 普通用户都有正常的登录记录
+✓ 用户权限分配合理，遵循最小权限原则
+✓ 没有异常的权限提升
+
+💡 判断技巧：
+1. "管理员越少越安全" - 管理员账户应该控制在最少数量
+2. "陌生账户要怀疑" - 不认识的账户要仔细核实
+3. "权限过大有问题" - 普通用户不应该有管理员权限
+4. "登录记录看端倪" - 异常时间、异常地点的登录要注意
+
+⚙️ 进程安全判断
+
+🚨 可疑进程特征：
+✗ 在系统目录外运行的系统进程名
+✗ 占用CPU或内存异常高的进程
+✗ 进程路径包含临时目录、下载目录
+✗ 进程名是随机字符串或模仿系统进程
+✗ PowerShell、CMD长时间运行
+
+✅ 正常进程特征：
+✓ 在正确系统目录下的系统进程
+✓ 有数字签名的知名软件进程
+✓ 资源占用正常的业务进程
+✓ 启动时间与系统启动时间匹配
+
+💡 判断技巧：
+1. "位置不对必有鬼" - 系统进程应该在系统目录
+2. "资源占用看异常" - CPU、内存占用过高要注意
+3. "进程树看关系" - 父子进程关系要合理
+4. "签名验证很重要" - 没有签名的进程要谨慎
+
+🌐 网络连接判断
+
+🚨 危险网络连接：
+✗ 连接到可疑外网IP（特别是境外IP）
+✗ 使用非标准端口的连接
+✗ 大量并发连接
+✗ 连接到已知恶意IP
+✗ 4444、1234等常见后门端口
+
+✅ 正常网络连接：
+✓ 连接到内网服务器
+✓ 使用标准端口（80、443、22、3389等）
+✓ 连接到知名服务商IP
+✓ 业务相关的正常连接
+
+💡 判断技巧：
+1. "内网连接相对安全" - 内网IP通常风险较低
+2. "外网连接要审查" - 所有外网连接都要确认必要性
+3. "端口异常要警惕" - 非标准端口连接要重点关注
+4. "流量大小看异常" - 异常大的数据传输要注意
+`,
+    "📋 检查清单": `
+Windows应急响应检查清单
+
+🚨 紧急处置清单（30分钟内完成）
+□ 1. 确认安全事件性质和影响范围
+□ 2. 通知应急响应团队和管理层
+□ 3. 隔离受影响系统（断网不关机）
+□ 4. 保护现场，避免证据破坏
+□ 5. 收集初步证据和日志
+□ 6. 评估业务影响和风险等级
+□ 7. 启动相应级别的应急预案
+□ 8. 建立事件处理记录
+
+🔍 详细分析清单（2小时内完成）
+
+用户账户安全检查：
+□ 检查所有用户账户状态
+□ 确认管理员权限分配
+□ 审查最近的权限变更
+□ 检查异常登录记录
+
+进程和服务检查：
+□ 分析所有运行进程
+□ 检查系统服务状态
+□ 确认进程的合法性
+□ 查看进程网络连接
+
+网络连接分析：
+□ 检查所有网络连接
+□ 分析可疑IP地址
+□ 确认端口使用情况
+□ 检查防火墙日志
+
+文件系统检查：
+□ 扫描恶意软件
+□ 检查系统文件完整性
+□ 分析最近修改的文件
+□ 查看临时目录内容
+
+日志分析：
+□ 分析安全事件日志
+□ 检查系统错误日志
+□ 审查应用程序日志
+□ 分析网络设备日志
+
+🛠️ 系统加固清单（24小时内完成）
+
+账户安全加固：
+□ 重置所有用户密码
+□ 启用账户锁定策略
+□ 配置密码复杂度要求
+□ 启用多因素认证
+
+系统安全加固：
+□ 安装最新安全补丁
+□ 更新防病毒软件
+□ 配置防火墙规则
+□ 启用系统审计
+
+网络安全加固：
+□ 更新网络设备配置
+□ 加强访问控制
+□ 部署入侵检测系统
+□ 配置网络监控
+
+监控能力提升：
+□ 加强日志记录
+□ 部署安全监控工具
+□ 配置告警规则
+□ 建立威胁情报源
+`,
+    "💡 专业建议": `
+Windows应急响应专业建议
+
+🎯 实战应急响应技巧
+
+1分钟快速检查法：
+# 检查异常用户（重点关注）
+net user
+# 看是否有陌生用户，特别是管理员组的
+
+# 检查异常进程（重点关注）
+tasklist /svc
+# 看是否有可疑进程，特别是高CPU占用的
+
+# 检查网络连接（重点关注）
+netstat -an
+# 看是否有可疑外网连接，特别是非标准端口
+
+# 检查系统服务
+sc query type= service state= all
+# 看是否有可疑服务
+
+5分钟深度检查法：
+# 检查登录日志
+eventvwr.msc
+# 查看安全日志，关注登录失败和成功记录
+
+# 检查启动项
+msconfig
+# 查看是否有可疑的启动程序
+
+# 检查计划任务
+taskschd.msc
+# 查看是否有可疑的计划任务
+
+# 检查系统文件
+sfc /scannow
+# 检查系统文件完整性
+
+🔍 常见攻击手法识别
+
+权限提升攻击：
+特征：
+- 普通用户突然获得管理员权限
+- 系统中出现新的管理员账户
+- 发现权限提升工具或脚本
+
+应对：
+- 立即检查所有用户权限
+- 审查权限变更日志
+- 重置所有账户密码
+
+后门植入：
+特征：
+- 发现可疑的网络连接
+- 系统中出现未知的可执行文件
+- 防火墙规则被异常修改
+
+应对：
+- 断开网络连接
+- 查杀恶意软件
+- 检查系统完整性
+
+数据窃取：
+特征：
+- 异常的文件访问记录
+- 大量数据传输活动
+- 敏感文件被异常访问
+
+应对：
+- 立即保护敏感数据
+- 分析访问日志
+- 评估数据泄露风险
+
+👥 应急响应团队建设
+
+团队角色分工：
+- 事件指挥官：统筹协调，决策指挥
+- 技术分析师：技术分析，威胁研判
+- 系统管理员：系统操作，恢复处理
+- 安全工程师：安全加固，防护部署
+- 法务专员：法律合规，证据保全
+- 沟通协调员：内外沟通，信息发布
+
+🛠️ 工具和技术准备
+
+必备工具清单：
+- 应急响应脚本（本工具）
+- 恶意软件扫描工具
+- 网络分析工具
+- 日志分析工具
+- 取证分析工具
+- 系统监控工具
+
+🛡️ 预防措施建议
+
+日常安全措施：
+1. 定期安全评估和渗透测试
+2. 建立完善的监控和告警体系
+3. 制定详细的应急响应预案
+4. 定期进行应急演练
+5. 加强员工安全意识培训
+6. 建立威胁情报收集机制
+`,
+    "🛠️ 工具使用": `
+Windows应急响应工具使用指南
+
+🔧 本工具使用方法
+
+1. 数据收集阶段：
+   - 运行PowerShell脚本：windows_emergency_response.ps1
+   - 脚本会自动收集系统信息、用户信息、进程信息等
+   - 生成详细的应急响应报告文件
+
+2. 数据分析阶段：
+   - 启动Web分析平台：python windows_rules_engine.py
+   - 访问主页面：http://localhost:12002
+   - 上传报告文件进行智能分析
+
+3. 结果查看阶段：
+   - 查看分析结果和安全告警
+   - 获取专业的处置建议
+   - 下载详细的分析报告
+
+🛠️ 系统内置工具
+
+Windows事件查看器：
+eventvwr.msc
+- 查看系统日志、安全日志、应用程序日志
+- 重点关注登录事件、权限变更事件
+
+任务管理器：
+taskmgr.exe
+- 查看运行进程和系统性能
+- 识别异常进程和资源占用
+
+系统配置：
+msconfig.exe
+- 查看启动项和系统服务
+- 禁用可疑的启动程序
+
+注册表编辑器：
+regedit.exe
+- 检查注册表启动项
+- 查看系统配置信息
+
+网络连接查看：
+netstat -an
+- 查看所有网络连接
+- 识别可疑的外网连接
+
+用户账户管理：
+net user
+lusrmgr.msc
+- 查看所有用户账户
+- 管理用户权限
+
+🔍 第三方推荐工具
+
+Sysinternals Suite：
+- Process Explorer：详细进程分析
+- Autoruns：启动项全面检查
+- TCPView：网络连接实时监控
+- PsExec：远程执行命令
+
+安全扫描工具：
+- Malwarebytes：恶意软件扫描
+- YARA：恶意代码检测规则
+- Volatility：内存取证分析
+- Wireshark：网络流量分析
+
+📊 日志分析工具
+
+Windows PowerShell：
+Get-WinEvent -LogName Security
+Get-WinEvent -LogName System
+Get-WinEvent -LogName Application
+
+事件ID重点关注：
+- 4624：成功登录
+- 4625：登录失败
+- 4648：使用显式凭据登录
+- 4672：分配特殊权限
+- 4720：创建用户账户
+- 4726：删除用户账户
+- 4728：将成员添加到安全组
+- 4732：将成员添加到本地组
+
+🎯 实战技巧
+
+快速排查命令组合：
+# 一键检查用户和权限
+net user & net localgroup administrators
+
+# 一键检查进程和服务
+tasklist /svc & sc query type= service state= all
+
+# 一键检查网络连接
+netstat -an & netstat -b
+
+# 一键检查启动项
+wmic startup get caption,command,location
+
+# 一键检查计划任务
+schtasks /query /fo table /v
+
+自动化脚本示例：
+@echo off
+echo 开始应急响应快速检查...
+echo.
+echo 1. 检查用户账户
+net user
+echo.
+echo 2. 检查管理员组
+net localgroup administrators
+echo.
+echo 3. 检查运行进程
+tasklist
+echo.
+echo 4. 检查网络连接
+netstat -an
+echo.
+echo 5. 检查启动项
+wmic startup get caption,command
+echo.
+echo 应急响应快速检查完成！
+`,
+    "📚 学习资源": `
+Windows应急响应学习资源
+
+📖 官方文档
+
+Microsoft Security Response Center
+- Windows安全最佳实践
+- 安全更新和漏洞信息
+- 事件响应指南
+
+NIST Cybersecurity Framework
+- 网络安全框架标准
+- 事件响应流程规范
+- 风险管理指导
+
+SANS Incident Response Guide
+- 事件响应最佳实践
+- 实战案例分析
+- 工具使用指南
+
+🛠️ 实用工具学习
+
+Sysinternals Suite
+- 官方文档和使用教程
+- 实战案例分析
+- 高级功能详解
+
+YARA Rules
+- 恶意代码检测规则编写
+- 规则库维护和更新
+- 自定义检测规则
+
+Volatility Framework
+- 内存取证分析技术
+- 恶意软件内存分析
+- 高级取证技巧
+
+Wireshark
+- 网络流量分析技术
+- 协议分析和解码
+- 网络安全监控
+
+🎓 培训认证
+
+GCIH (GIAC Certified Incident Handler)
+- 事件处理专业认证
+- 实战技能验证
+- 行业认可度高
+
+GCFA (GIAC Certified Forensic Analyst)
+- 数字取证分析认证
+- 深度技术能力
+- 法庭证据处理
+
+CISSP (Certified Information Systems Security Professional)
+- 信息安全专业认证
+- 全面安全知识体系
+- 管理层认可
+
+CISM (Certified Information Security Manager)
+- 信息安全管理认证
+- 战略规划能力
+- 风险管理专长
+
+📚 推荐书籍
+
+《Windows Internals》
+- Windows系统内部机制
+- 深度技术原理
+- 系统调试技巧
+
+《Malware Analyst's Cookbook》
+- 恶意软件分析技术
+- 实战分析案例
+- 工具使用指南
+
+《Incident Response & Computer Forensics》
+- 事件响应完整流程
+- 计算机取证技术
+- 法律合规要求
+
+《The Art of Memory Forensics》
+- 内存取证分析技术
+- 高级分析方法
+- 实战案例研究
+
+🌐 在线资源
+
+GitHub安全项目
+- 开源安全工具
+- 检测规则库
+- 社区贡献代码
+
+安全博客和论坛
+- 最新威胁情报
+- 技术分析文章
+- 经验分享交流
+
+安全会议和培训
+- Black Hat / DEF CON
+- RSA Conference
+- 国内安全会议
+
+实验环境搭建
+- VirtualBox / VMware
+- Windows虚拟机
+- 恶意软件分析环境
+
+🎯 学习路径建议
+
+初级阶段（1-3个月）：
+1. 掌握Windows系统基础知识
+2. 学习基本的命令行操作
+3. 了解常见的安全威胁
+4. 熟悉基础安全工具
+
+中级阶段（3-6个月）：
+1. 深入学习事件响应流程
+2. 掌握日志分析技术
+3. 学习恶意软件分析基础
+4. 实践应急响应案例
+
+高级阶段（6-12个月）：
+1. 掌握高级取证分析技术
+2. 学习威胁狩猎方法
+3. 开发自定义检测规则
+4. 建立完整的响应体系
+
+专家阶段（1年以上）：
+1. 研究最新攻击技术
+2. 开发安全工具和平台
+3. 指导团队和培训他人
+4. 参与安全标准制定
+
+💡 实践建议
+
+1. 搭建实验环境进行练习
+2. 参与CTF竞赛提升技能
+3. 关注安全社区和论坛
+4. 定期进行应急演练
+5. 记录和分享学习心得
+6. 与同行交流经验
+
+记住：应急响应是一个需要持续学习和实践的领域，保持好奇心和学习热情是成功的关键！🛡️
+`
+  };
+}
+
+// 渲染标签页
+function renderTabs(data) {
+  analysisData = data;
+  
+  const tabBtnHtml = gTabs.map((k, i) => 
+    `<button class="tablinks" onclick="openTab(event, '${k}')">${TAB_TITLES[k]}</button>`
+  ).join("");
+  document.getElementById("tabBtns").innerHTML = tabBtnHtml;
+
+  const tabContentHtml = gTabs.map(k => {
+    const subTitles = SUB_TAB_TITLES[k];
+    const subContent = subTitles.map(title => {
+      let content = "";
+      if (title === '📚 排查教程') {
+        content = generateWindowsTutorial(k);
+        return `<details><summary>${title}</summary><div style="padding: 10px;">${content}</div></details>`;
+      } else {
+        content = data[k] && data[k][title] ? data[k][title] : "";
+        return `<details open><summary>${title}</summary><pre>${escapeHtml(content)}</pre></details>`;
+      }
+    }).join("");
+    return `<div id="${k}" class="tabcontent">${subContent}</div>`;
+  }).join("");
+  document.getElementById("tabContents").innerHTML = tabContentHtml;
+
+  if (gTabs.length) {
+    setTimeout(() => document.getElementsByClassName("tablinks")[0].click(), 100);
+  }
+  
+  // 调用规则引擎API进行分析（如果还没有分析过）
+  if (!skipAnalysis) {
+    analyzeReport(data);
+  }
+}
+
+// HTML转义函数
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// 打开标签页
+function openTab(evt, tabName) {
+  const tabcontent = document.getElementsByClassName("tabcontent");
+  for (let i = 0; i < tabcontent.length; i++) {
+    tabcontent[i].style.display = "none";
+  }
+  const tablinks = document.getElementsByClassName("tablinks");
+  for (let i = 0; i < tablinks.length; i++) {
+    tablinks[i].className = tablinks[i].className.replace(" active", "");
+  }
+  document.getElementById(tabName).style.display = "block";
+  evt.currentTarget.className += " active";
+}
+
+// 搜索功能
+function searchTabs() {
+  const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+  const searchCount = document.getElementById('searchCount');
+  const prevBtn = document.getElementById('prevMatch');
+  const nextBtn = document.getElementById('nextMatch');
+  
+  // 清除之前的高亮
+  clearHighlights();
+  
+  if (searchTerm.length < 2) {
+    searchCount.textContent = "输入关键词搜索";
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
+    searchMatches = [];
+    currentSearchIndex = -1;
+    return;
+  }
+  
+  // 查找匹配项
+  searchMatches = [];
+  const allContent = document.querySelectorAll('.tabcontent pre, .tabcontent div');
+  
+  allContent.forEach((element, elementIndex) => {
+    const text = element.textContent || element.innerText;
+    const regex = new RegExp(searchTerm, 'gi');
+    let match;
+    
+    while ((match = regex.exec(text)) !== null) {
+      searchMatches.push({
+        element: element,
+        index: match.index,
+        length: searchTerm.length,
+        elementIndex: elementIndex
+      });
+    }
+  });
+  
+  if (searchMatches.length > 0) {
+    searchCount.textContent = `找到 ${searchMatches.length} 个匹配项`;
+    prevBtn.disabled = false;
+    nextBtn.disabled = false;
+    currentSearchIndex = 0;
+    highlightMatches();
+    navigateToMatch(0);
+  } else {
+    searchCount.textContent = "未找到匹配项";
+    prevBtn.disabled = true;
+    nextBtn.disabled = true;
+  }
+}
+
+// 高亮匹配项
+function highlightMatches() {
+  searchMatches.forEach((match, index) => {
+    const element = match.element;
+    const text = element.innerHTML;
+    const searchTerm = document.getElementById('searchInput').value;
+    const regex = new RegExp(`(${escapeRegExp(searchTerm)})`, 'gi');
+    const highlightedText = text.replace(regex, `<span class="highlight" data-match-index="${index}">$1</span>`);
+    element.innerHTML = highlightedText;
+  });
+}
+
+// 清除高亮
+function clearHighlights() {
+  const highlights = document.querySelectorAll('.highlight');
+  highlights.forEach(highlight => {
+    const parent = highlight.parentNode;
+    parent.replaceChild(document.createTextNode(highlight.textContent), highlight);
+    parent.normalize();
+  });
+}
+
+// 导航到匹配项
+function navigateSearch(direction) {
+  if (searchMatches.length === 0) return;
+  
+  currentSearchIndex += direction;
+  if (currentSearchIndex >= searchMatches.length) {
+    currentSearchIndex = 0;
+  } else if (currentSearchIndex < 0) {
+    currentSearchIndex = searchMatches.length - 1;
+  }
+  
+  navigateToMatch(currentSearchIndex);
+  document.getElementById('searchCount').textContent = 
+    `第 ${currentSearchIndex + 1} 个，共 ${searchMatches.length} 个匹配项`;
+}
+
+// 导航到指定匹配项
+function navigateToMatch(index) {
+  const match = searchMatches[index];
+  const highlight = document.querySelector(`[data-match-index="${index}"]`);
+  
+  if (highlight) {
+    // 找到包含该元素的标签页
+    let tabContent = highlight.closest('.tabcontent');
+    if (tabContent) {
+      // 激活对应的标签页
+      const tabId = tabContent.id;
+      const tabButton = document.querySelector(`[onclick="openTab(event, '${tabId}')"]`);
+      if (tabButton) {
+        tabButton.click();
+      }
+      
+      // 展开对应的details元素
+      const details = highlight.closest('details');
+      if (details) {
+        details.open = true;
+        details.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }
+}
+
+// 转义正则表达式特殊字符
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// 调用规则引擎分析
+async function analyzeReport(data) {
+  try {
+    // 将数据转换为文本格式进行分析
+    const reportText = JSON.stringify(data, null, 2);
+    
+    const response = await fetch('/analyze', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ content: reportText })
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      displayAlerts(result.alerts || []);
+    }
+  } catch (error) {
+    console.log('规则引擎分析失败，使用本地分析模式');
+    performLocalAnalysis(data);
+  }
+}
+
+// 本地分析模式
+function performLocalAnalysis(data) {
+  const alerts = [];
+  
+  // 简单的本地规则检查
+  const reportText = JSON.stringify(data, null, 2);
+  
+  if (reportText.includes('实时保护: False')) {
+    alerts.push({
+      rule_name: 'Windows Defender关闭',
+      description: 'Windows Defender实时保护已关闭',
+      severity: 'high',
+      category: 'antivirus'
+    });
+  }
+  
+  if (reportText.includes('可疑进程') || reportText.includes('异常进程')) {
+    alerts.push({
+      rule_name: '可疑进程检测',
+      description: '发现可疑的进程活动',
+      severity: 'medium',
+      category: 'process_security'
+    });
+  }
+  
+  displayAlerts(alerts);
+}
+
+// 显示告警
+function displayAlerts(alerts) {
+  const alertContainer = document.getElementById('alertContainer');
+  const alertSummary = document.getElementById('alertSummary');
+  
+  if (alerts.length === 0) {
+    alertContainer.innerHTML = `
+      <div style="text-align: center; padding: 40px; color: #27ae60;">
+        <h3>✅ 系统状态良好</h3>
+        <p>未发现明显的安全威胁</p>
+      </div>
+    `;
+    alertSummary.innerHTML = `
+      <div style="color: #27ae60;">
+        <strong>安全状态: 良好</strong><br>
+        告警数量: 0
+      </div>
+    `;
+    return;
+  }
+  
+  // 统计告警
+  const highAlerts = alerts.filter(a => a.severity === 'high').length;
+  const mediumAlerts = alerts.filter(a => a.severity === 'medium').length;
+  const lowAlerts = alerts.filter(a => a.severity === 'low').length;
+  
+  alertSummary.innerHTML = `
+    <div>
+      <strong>安全告警统计</strong><br>
+      🔴 高危: ${highAlerts}<br>
+      🟡 中危: ${mediumAlerts}<br>
+      🟢 低危: ${lowAlerts}<br>
+      总计: ${alerts.length}
+    </div>
+  `;
+  
+  // 显示告警详情
+  let alertHtml = '';
+  alerts.forEach(alert => {
+    const alertClass = `alert-${alert.severity}`;
+    const severityIcon = {
+      'high': '🔴',
+      'medium': '🟡', 
+      'low': '🟢'
+    }[alert.severity] || '⚪';
+    
+    alertHtml += `
+      <div class="alert-item ${alertClass}">
+        <h4>${severityIcon} ${alert.rule_name}</h4>
+        <p><strong>描述:</strong> ${alert.description}</p>
+        <p><strong>类别:</strong> ${alert.category}</p>
+      </div>
+    `;
+  });
+  
+  alertContainer.innerHTML = alertHtml;
+}
+
+// 切换侧边栏
+function toggleSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  const button = document.querySelector('.collapse-button');
+  
+  sidebar.classList.toggle('collapsed');
+  
+  if (sidebar.classList.contains('collapsed')) {
+    button.textContent = '< 展开告警面板';
+  } else {
+    button.textContent = '收起告警面板 >';
+  }
+}
+
+</script>
+</head>
+<body>
+  <div class="header">
+    <h1>🛡️ Windows 应急响应报告查看器 (详细版)</h1>
+    <div class="subtitle">专业化Windows安全威胁检测与分析系统 | 详细日志分析 + 攻击溯源 + 技术教程</div>
+  </div>
+
+  <div class="main-container">
+    <div class="content-container">
+      <div class="search-container">
+        <input type="file" id="fileInput" accept=".txt,.json">
+        <input type="text" id="searchInput" placeholder="搜索报告内容..." onkeyup="searchTabs()">
+        <div class="search-nav">
+          <button id="prevMatch" onclick="navigateSearch(-1)" disabled>上一个</button>
+          <button id="nextMatch" onclick="navigateSearch(1)" disabled>下一个</button>
+          <span id="searchCount">输入关键词搜索</span>
+        </div>
+      </div>
+
+      <div class="tabs" id="tabBtns">
+        <!-- 标签按钮将在这里动态生成 -->
+      </div>
+
+      <div id="tabContents">
+        <!-- 标签内容将在这里动态生成 -->
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <h3>🚨 安全告警面板</h3>
+        <button class="collapse-button" onclick="toggleSidebar()">收起告警面板 ></button>
+        <div id="alertSummary" class="alert-summary">
+          <!-- 告警统计将在这里显示 -->
+        </div>
+      </div>
+      <div id="alertContainer" class="alert-container">
+        <div style="text-align: center; padding: 40px; color: #666;">
+          <p>📁 请选择报告文件开始分析</p>
+          <p style="font-size: 0.9em; margin-top: 10px;">支持 .txt 和 .json 格式</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

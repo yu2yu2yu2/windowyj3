@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件上传测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f0f8ff;
+        }
+        .alert {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .alert-success { background-color: #d4edda; color: #155724; }
+        .alert-error { background-color: #f8d7da; color: #721c24; }
+        .alert-info { background-color: #d1ecf1; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <h1>🛡️ Windows应急响应分析测试</h1>
+    
+    <div class="upload-area">
+        <h3>选择报告文件进行分析</h3>
+        <input type="file" id="fileInput" accept=".txt,.json" />
+        <p>支持 .txt 和 .json 格式</p>
+    </div>
+    
+    <div id="result" class="result" style="display: none;">
+        <h3>分析结果</h3>
+        <div id="alertsContainer"></div>
+    </div>
+
+    <script>
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                console.log('选择的文件:', file.name, file.size);
+                showAlert('正在分析文件，请稍候...', 'info');
+                
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    console.log('响应状态:', response.status);
+                    return response.json();
+                })
+                .then(result => {
+                    console.log('分析结果:', result);
+                    if (result.success) {
+                        displayResults(result);
+                        showAlert(`分析完成！发现 ${result.alerts.length} 个安全告警`, 'success');
+                    } else {
+                        showAlert('分析失败: ' + (result.error || '未知错误'), 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('分析错误:', error);
+                    showAlert('分析失败: ' + error.message, 'error');
+                });
+            }
+        });
+
+        function displayResults(result) {
+            const container = document.getElementById('alertsContainer');
+            const resultDiv = document.getElementById('result');
+            
+            let html = '<h4>📊 分析统计</h4>';
+            html += `<p>总告警数: ${result.alerts.length}</p>`;
+            html += `<p>分析时间: ${result.analysis_time}</p>`;
+            
+            if (result.alerts.length > 0) {
+                html += '<h4>🚨 安全告警</h4>';
+                result.alerts.forEach((alert, index) => {
+                    const severityColor = alert.severity === 'high' ? '#e53e3e' : 
+                                        alert.severity === 'medium' ? '#dd6b20' : '#38a169';
+                    html += `
+                        <div style="border-left: 4px solid ${severityColor}; padding: 10px; margin: 10px 0; background-color: #f9f9f9;">
+                            <strong>${alert.rule_name}</strong> (${alert.severity})<br>
+                            <span style="color: #666;">${alert.description}</span><br>
+                            <small>行号: ${alert.line_number} | 类别: ${alert.category}</small>
+                        </div>
+                    `;
+                });
+            }
+            
+            if (result.recommendations && result.recommendations.length > 0) {
+                html += '<h4>💡 处置建议</h4>';
+                result.recommendations.forEach(rec => {
+                    html += `
+                        <div style="margin: 15px 0; padding: 15px; background-color: #f0f8ff; border-radius: 5px;">
+                            <h5>${rec.category} (${rec.priority}优先级)</h5>
+                            <ul>
+                    `;
+                    rec.actions.forEach(action => {
+                        html += `<li>${action}</li>`;
+                    });
+                    html += '</ul>';
+                    
+                    if (rec.emergency_actions && rec.emergency_actions.length > 0) {
+                        html += '<div style="background-color: #fed7d7; padding: 8px; border-radius: 3px; margin-top: 10px;"><strong>紧急措施：</strong><ul>';
+                        rec.emergency_actions.forEach(action => {
+                            html += `<li>${action}</li>`;
+                        });
+                        html += '</ul></div>';
+                    }
+                    html += '</div>';
+                });
+            }
+            
+            container.innerHTML = html;
+            resultDiv.style.display = 'block';
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            
+            document.body.insertBefore(alertDiv, document.body.firstChild);
+            
+            setTimeout(() => {
+                if (alertDiv.parentElement) {
+                    alertDiv.remove();
+                }
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
