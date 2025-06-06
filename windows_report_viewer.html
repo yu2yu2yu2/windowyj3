@@ -519,21 +519,31 @@ const TAB_TITLES = {
   logs: "📋 日志分析",
   tasks: "⏰ 计划任务",
   malware: "🦠 恶意软件检测",
+  patches: "🔧 补丁信息",
+  environment: "🌍 环境变量",
+  services: "🔧 系统服务",
+  startup: "🚀 启动项",
+  recent_files: "📋 访问记录",
   stats: "📈 安全统计",
   guide: "📖 应急指南"
 };
 
 const SUB_TAB_TITLES = {
   summary: ["系统概览", "风险评估", "智能建议", "检查清单", "专业总结"],
-  system: ["📚 排查教程", "基本系统信息", "已安装补丁信息", "重要环境变量"],
-  user: ["📚 排查教程", "本地用户账户", "管理员组成员", "当前登录用户", "最近登录记录"],
-  process: ["📚 排查教程", "高CPU占用进程", "可疑进程检查", "运行中的系统服务", "启动项"],
-  network: ["📚 排查教程", "活动网络连接", "监听端口", "网络配置", "DNS配置"],
-  filesystem: ["📚 排查教程", "最近修改的系统文件", "临时目录可疑文件", "下载目录最近文件"],
-  registry: ["📚 排查教程", "注册表启动项", "可疑服务注册表", "最近访问的文件记录"],
-  logs: ["📚 排查教程", "登录失败记录", "系统错误事件", "应用程序错误事件"],
-  tasks: ["📚 排查教程", "活动计划任务", "可疑计划任务"],
-  malware: ["📚 排查教程", "Windows Defender状态", "可疑网络连接", "异常进程检查"],
+  system: ["📚 排查教程", "系统信息概览", "硬件信息", "详细系统信息"],
+  user: ["📚 排查教程", "用户详情", "管理员列表", "统计信息"],
+  process: ["📚 排查教程", "进程详情", "高CPU进程", "可疑进程", "统计信息"],
+  network: ["📚 排查教程", "活动连接", "监听端口", "可疑连接", "网络配置", "DNS配置", "统计信息"],
+  filesystem: ["📚 排查教程", "可疑文件", "最近修改文件", "临时目录文件", "下载目录文件", "系统文件检查", "统计信息"],
+  registry: ["📚 排查教程", "所有启动项", "注册表启动项", "可疑启动项", "WMIC启动项", "统计信息"],
+  logs: ["📚 排查教程", "安全日志样本", "系统日志样本", "应用程序日志样本", "登录失败次数", "系统错误数", "应用程序错误数"],
+  tasks: ["📚 排查教程", "所有任务", "活动任务", "可疑任务", "统计信息"],
+  malware: ["📚 排查教程", "服务状态", "注册表配置", "排除项配置"],
+  patches: ["📚 排查教程", "补丁列表", "统计信息"],
+  environment: ["📚 排查教程", "重要环境变量", "可疑环境变量", "统计信息"],
+  services: ["📚 排查教程", "服务详情", "运行中服务", "可疑服务", "服务详细信息", "统计信息"],
+  startup: ["📚 排查教程", "所有启动项", "注册表启动项", "可疑启动项", "WMIC启动项", "统计信息"],
+  recent_files: ["📚 排查教程", "最近文档", "浏览器数据", "统计信息"],
   stats: ["📚 统计教程", "用户安全统计", "进程安全统计", "网络安全统计", "文件系统统计", "注册表统计", "计划任务统计", "日志统计", "安全防护状态", "安全风险评估", "专业安全建议"],
   guide: ["🎯 应急响应流程", "🔍 判断技巧大全", "📋 检查清单", "💡 专业建议", "🛠️ 工具使用", "📚 学习资源"]
 };
@@ -1334,25 +1344,35 @@ function parseAndRenderReport(content, skipAnalysis = false) {
     if (lines.length > 0) {
       const title = lines[0].trim();
       
-      // 映射到对应的标签
-      if (title.includes('系统信息')) {
+      // 映射到对应的标签 - 更新为新的报告格式
+      if (title.includes('系统基本信息') || title.includes('系统信息')) {
         data.system = parseSystemSection(section);
-      } else if (title.includes('用户和权限')) {
+      } else if (title.includes('用户账户信息') || title.includes('用户和权限')) {
         data.user = parseUserSection(section);
-      } else if (title.includes('进程和服务')) {
+      } else if (title.includes('进程信息') || title.includes('进程和服务')) {
         data.process = parseProcessSection(section);
-      } else if (title.includes('网络连接')) {
+      } else if (title.includes('网络连接信息') || title.includes('网络连接')) {
         data.network = parseNetworkSection(section);
-      } else if (title.includes('文件系统')) {
+      } else if (title.includes('文件系统检查') || title.includes('文件系统')) {
         data.filesystem = parseFilesystemSection(section);
-      } else if (title.includes('注册表')) {
+      } else if (title.includes('注册表启动项检查') || title.includes('注册表')) {
         data.registry = parseRegistrySection(section);
-      } else if (title.includes('日志分析')) {
+      } else if (title.includes('系统日志摘要') || title.includes('日志分析')) {
         data.logs = parseLogsSection(section);
-      } else if (title.includes('计划任务')) {
+      } else if (title.includes('计划任务检查') || title.includes('计划任务')) {
         data.tasks = parseTasksSection(section);
-      } else if (title.includes('恶意软件')) {
+      } else if (title.includes('Windows Defender状态') || title.includes('恶意软件')) {
         data.malware = parseMalwareSection(section);
+      } else if (title.includes('已安装补丁信息')) {
+        data.patches = parseSystemSection(section);
+      } else if (title.includes('重要环境变量')) {
+        data.environment = parseSystemSection(section);
+      } else if (title.includes('系统服务检查')) {
+        data.services = parseSystemSection(section);
+      } else if (title.includes('启动项检查')) {
+        data.startup = parseSystemSection(section);
+      } else if (title.includes('最近访问文件记录')) {
+        data.recent_files = parseSystemSection(section);
       } else if (title.includes('安全统计汇总')) {
         data.stats = parseStatsSection(section);
       }
@@ -1368,17 +1388,51 @@ function parseAndRenderReport(content, skipAnalysis = false) {
 
 // 解析各个部分的函数
 function parseSystemSection(content) {
-  const subsections = content.split(/-{40,}/);
   const result = {};
   
-  subsections.forEach(sub => {
-    const lines = sub.trim().split('\n');
-    if (lines.length > 1) {
-      const title = lines[0].trim();
-      const content = lines.slice(1).join('\n');
-      result[title] = content;
+  // 首先尝试按照新格式解析（使用冒号分隔的键值对）
+  const lines = content.split('\n');
+  let currentKey = '';
+  let currentContent = [];
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    
+    // 跳过分隔线和空行
+    if (!line || line.match(/^={3,}/) || line.match(/^-{3,}/)) {
+      continue;
     }
-  });
+    
+    // 检查是否是新的键（包含冒号的行）
+    if (line.includes(':') && !line.startsWith('-') && !line.startsWith('•')) {
+      // 保存之前的内容
+      if (currentKey && currentContent.length > 0) {
+        result[currentKey] = currentContent.join('\n').trim();
+      }
+      
+      // 开始新的键
+      const colonIndex = line.indexOf(':');
+      currentKey = line.substring(0, colonIndex).trim();
+      const value = line.substring(colonIndex + 1).trim();
+      currentContent = value ? [value] : [];
+    } else if (currentKey) {
+      // 添加到当前内容
+      currentContent.push(line);
+    } else if (line && !result['内容']) {
+      // 如果没有明确的键，使用"内容"作为默认键
+      result['内容'] = result['内容'] ? result['内容'] + '\n' + line : line;
+    }
+  }
+  
+  // 保存最后一个键的内容
+  if (currentKey && currentContent.length > 0) {
+    result[currentKey] = currentContent.join('\n').trim();
+  }
+  
+  // 如果没有解析到任何键值对，将整个内容作为一个块
+  if (Object.keys(result).length === 0) {
+    result['详细信息'] = content.trim();
+  }
   
   return result;
 }
